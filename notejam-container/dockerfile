@@ -11,3 +11,5 @@ WORKDIR /notejam
 
 RUN python /notejam/manage.py syncdb
 RUN python /notejam/manage.py migrate
+
+#RUN python /notejam/manage.py runserver
