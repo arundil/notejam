@@ -1,6 +1,7 @@
 FROM python:2.7
 
 RUN apt-get update
+RUN apt-get install postgresql postgresql-contrib -y
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt
@@ -9,6 +10,10 @@ COPY notejam/ notejam/
 
 WORKDIR /notejam
 
+# Create Database if does not exits
+RUN echo "SELECT 'CREATE DATABASE notejam' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notejam')\gexec" | psql "host=dbnotejam.postgres.database.azure.com port=5432 dbname=postgres user=posgres@dbnotejam password=1-1EepcDlcylt sslmode=require"
+
+RUN python /notejam/manage.py dumpdata --indent=2 auth > /notejam/initial_data.json
 RUN python /notejam/manage.py syncdb
 RUN python /notejam/manage.py migrate
 
