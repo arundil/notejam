@@ -1,0 +1,13 @@
+FROM python:2.7
+
+RUN apt-get update
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY notejam/ notejam/
+
+WORKDIR /notejam
+
+RUN python /notejam/manage.py syncdb
+RUN python /notejam/manage.py migrate
