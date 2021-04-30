@@ -23,7 +23,9 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 data:
-  DEBUG: ""
+  DB_URL: "dbnotejam.postgres.database.azure.com"
+  DB_PORT: "5432"
+  DB_NAME: "notejam"
 metadata:
   creationTimestamp: null
   labels:
@@ -68,18 +70,36 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
-        args: 
-        - "python"
-        - "manage.py"
-        - "runserver"
-        - "0.0.0.0:8000"
+        command: 
+          - /bin/bash
+          - -c
+          - /notejam/init.sh
         env: 
-          - name: DEBUG
+          - name: DB_URL
             valueFrom: 
               configMapKeyRef: 
-                key: DEBUG
+                key: DB_URL
                 name: global-configmap
-
+          - name: DB_PORT
+            valueFrom: 
+              configMapKeyRef: 
+                name: global-configmap
+                key: DB_PORT
+          - name: DB_NAME
+            valueFrom: 
+              configMapKeyRef: 
+                name: global-configmap
+                key: DB_NAME
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: dbsecret
+                key: DB_USER
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: dbsecret
+                key: DB_PASSWORD
 
 ---
 #4) Service - Notetam
