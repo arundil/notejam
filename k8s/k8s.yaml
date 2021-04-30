@@ -7,7 +7,7 @@
 
 
 # 1) K8s Namespace:
-# Create Namespaces for dev + qa & prod
+# Create Namespaces for prod
 
 apiVersion: v1
 kind: Namespace
@@ -23,13 +23,13 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 data:
-  DATABASE_URL: ""
+  DEBUG: ""
 metadata:
   creationTimestamp: null
   labels:
     app: all
   name: global-configmap
-  namespace: nootejam  
+  namespace: notejam  
 ---
 # 3) 
 #=================================
@@ -40,7 +40,6 @@ metadata:
 # 5) Deployment- Notejam
 # Pull the container from registry
 # Open Port 8000
-# Mount the PV inside on path /home/ciberseguro/web/staticfiles
 # Configure DB connection reading from the ConfigMap
 
 apiVersion: apps/v1
@@ -65,14 +64,10 @@ spec:
       restartPolicy: Always
       containers:
       - name: notejam
-        image: ".azurecr.io/notejam:latest"
+        image: "arundil/notejam:latest"
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
-        lifecycle:
-          postStart:
-            exec:
-              command: ["cp", "-r","-f", "web/static/.","staticfiles/" ]
         args: 
         - "python"
         - "manage.py"
@@ -114,10 +109,9 @@ status:
 #------------>NGNIX<-------------#
 #=================================
 
-# 13) Deployment - NGINX
+# 5) Deployment - NGINX
 # Pull Image from registry
-# Read config on persistance volume dumped by loki (TODO in dockerfile)
-# Open Port 80
+# Open Port 80 & 443
 
 apiVersion: apps/v1
 kind: Deployment
@@ -143,23 +137,16 @@ spec:
         app: nginx
     spec:
       containers:
-      - image: dooingit.azurecr.io/nginx:latest
+      - image: arundil/nginx:latest
         imagePullPolicy: Always
         name: nginx
         ports:
         - containerPort: 80
         - containerPort: 443
         resources: {}
-        volumeMounts:
-        - mountPath: /home/ciberseguro/web/staticfiles
-          name: tempu-prod-claim0
       restartPolicy: Always
-      volumes:
-      - name: tempu-prod-claim0
-        persistentVolumeClaim:
-          claimName: tempu-prod-claim0
 ---
-# 14) Service - NGINX
+# 6) Service - NGINX
 # Expose port 80 of NGINX pod to the internal cluster network
 
 apiVersion: v1
@@ -168,8 +155,8 @@ metadata:
  creationTimestamp: null
  labels:
    app: nginx
- name: nginx-tempu-service-lb
- namespace: tempu-prod
+ name: nginx-service-lb
+ namespace: notejam
 spec:
  ports:
  - name: "http"
