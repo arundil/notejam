@@ -1,2 +1,4 @@
 containers/notejam-container/.pgpass
 containers/notejam-container/notejam/secrets.json
+secrets/.pgpass
+secrets/secrets.json
