@@ -1,0 +1,25 @@
+version: '3.7'
+
+services:
+    notejam:
+        build:
+            context: ./notejam-container
+            dockerfile: Dockerfile
+        tty: true
+        command: ./manage.py runserver 0.0.0.0:8000
+        networks:
+            - my-network
+        ports:
+        - 8000:8000
+    nginx:
+        build: ./nginx-container
+        ports:
+            - 80:80
+            - 443:443
+        networks:
+            - my-network
+        depends_on:
+            - notejam
+networks:
+    my-network:
+        driver: bridge
