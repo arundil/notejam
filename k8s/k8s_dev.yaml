@@ -1,0 +1,706 @@
+#=============================#
+#          K8s.yaml           #
+#=============================#
+#    Created by: Marc Bayón   #
+#                             #
+#=============================#
+
+
+# 1) K8s Namespace:
+# Create Namespaces for dev + qa & prod
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: notejam-dev
+  labels: 
+    name: notejam-dev
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: notejam
+  labels: 
+    name: notejam
+
+---
+
+# 2) 
+# Global ConfigMap for all the pods
+
+apiVersion: v1
+kind: ConfigMap
+data:
+  DATABASE_URL: ""
+metadata:
+  creationTimestamp: null
+  labels:
+    app: all
+  name: global-configmap
+  namespace: nootejam-dev
+---
+apiVersion: v1
+kind: ConfigMap
+data:
+  DATABASE_URL: ""
+metadata:
+  creationTimestamp: null
+  labels:
+    app: all
+  name: global-configmap
+  namespace: nootejam  
+---
+# 3) 
+#=================================
+#----------->LOKI<---------------#
+#=================================
+# ConfigMap for loki
+
+
+apiVersion: v1
+kind: ConfigMap
+data:
+  BROKKR_ADDRESS: brokkr
+  CAPTCHA_SECRET_KEY: 6Lf7h-cUAAAAAPjE-QcenS2UcI8V-60gMMs135OE
+  CAPTCHA_SITE_KEY: 6Lf7h-cUAAAAAL8PBqQz3tnExs1bHXXDkKe9iFiA
+  CBID: b3c2a02f-e435-4a9d-925f-00b5cab01303
+  DJANGO_ALLOWED_HOSTS: '[''*'']'
+  EXTENDED_FORM: "0"
+  GTM: GTM-P
+  IP: tempu.ciber-seguro.com
+  MAX: "2000000"
+  MIN: "583"
+  SECRET_KEY: xbo@$51^qjjn&gr#ir_cuyr5=o6qf)d$7tyj&@1d(c=rgo)t_=
+  STATIC_PATH: staticfiles
+  UA: UA-144025111-3
+  LOGIN_URL: /login
+  CODES_ENABLED: "0"
+  BURGER_HEADER: "0"
+  WHO_WE_ARE_SECTION: "0"
+metadata:
+  creationTimestamp: null
+  labels:
+    app: loki
+  name: loki-configmap
+  namespace: tempu-prod
+
+---
+
+# 4) Persistance Volume - Loki
+# Create persistance Volume for Loki static files
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: tempu-prod-claim0
+  namespace: tempu-prod
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+  
+---
+# 5) Deployment- Loki
+# Pull the container from registry
+# Open Port 8000
+# Mount the PV inside on path /home/ciberseguro/web/staticfiles
+# Configure DB connection reading from the ConfigMap
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  labels: 
+    app: loki
+  name: loki-deployment
+  namespace: tempu-prod
+spec: 
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loki
+  strategy: 
+    type: Recreate
+  template: 
+    metadata: 
+      labels: 
+        app: loki
+    spec:
+      restartPolicy: Always
+      volumes: 
+      - name: tempu-prod-claim0
+        persistentVolumeClaim: 
+          claimName: tempu-prod-claim0 
+      containers:
+      - name: loki
+        image: "dooingit.azurecr.io/loki:tempu_pre"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        lifecycle:
+          postStart:
+            exec:
+              command: ["cp", "-r","-f", "web/static/.","staticfiles/" ]
+        args: 
+        - gunicorn
+        - "ciberseguro.wsgi:application"
+        - "--bind"
+        - "0.0.0.0:8000"
+        - "--limit-request-line"
+        - "0"
+        env: 
+          - name: DEBUG
+            valueFrom: 
+              configMapKeyRef: 
+                key: DEBUG
+                name: global-configmap
+          - name: CARRIER_NAME
+            valueFrom: 
+              configMapKeyRef: 
+                key: CARRIER_NAME
+                name: global-configmap
+          - name: CLIENT_NAME
+            valueFrom: 
+              configMapKeyRef: 
+                key: CLIENT_NAME
+                name: global-configmap
+          - name: SECRET_KEY
+            valueFrom: 
+              configMapKeyRef: 
+                key: SECRET_KEY
+                name: loki-configmap
+          - name: DJANGO_ALLOWED_HOSTS
+            valueFrom: 
+              configMapKeyRef: 
+                key: DJANGO_ALLOWED_HOSTS
+                name: loki-configmap
+          - name: STATIC_PATH
+            valueFrom: 
+              configMapKeyRef: 
+                key: STATIC_PATH
+                name: loki-configmap
+          - name: MAX
+            valueFrom: 
+              configMapKeyRef: 
+                key: MAX
+                name: loki-configmap
+          - name: MIN
+            valueFrom: 
+              configMapKeyRef: 
+                key: MIN
+                name: loki-configmap
+          - name: EXTENDED_FORM
+            valueFrom: 
+              configMapKeyRef: 
+                key: EXTENDED_FORM
+                name: loki-configmap
+          - name: UA
+            valueFrom: 
+              configMapKeyRef: 
+                key: UA
+                name: loki-configmap
+          - name: GTM
+            valueFrom: 
+              configMapKeyRef: 
+                key: GTM
+                name: loki-configmap
+          - name: SQL_ENGINE
+            valueFrom: 
+              configMapKeyRef: 
+                key: SQL_ENGINE
+                name: global-configmap
+          - name: SQL_DATABASE
+            valueFrom: 
+              configMapKeyRef: 
+                key: SQL_DATABASE
+                name: global-configmap
+          - name: SQL_USER
+            valueFrom: 
+              configMapKeyRef: 
+                key: SQL_USER
+                name: global-configmap
+          - name: SQL_PASSWORD
+            valueFrom: 
+              configMapKeyRef: 
+                key: SQL_PASSWORD
+                name: global-configmap
+          - name: SQL_HOST
+            valueFrom: 
+              configMapKeyRef: 
+                key: SQL_HOST
+                name: global-configmap
+          - name: SQL_PORT
+            valueFrom: 
+              configMapKeyRef: 
+                key: SQL_PORT
+                name: global-configmap
+          - name: BROKKR_ADDRESS
+            valueFrom: 
+              configMapKeyRef: 
+                key: BROKKR_ADDRESS
+                name: loki-configmap
+          - name: CBID
+            valueFrom: 
+              configMapKeyRef: 
+                key: CBID
+                name: loki-configmap
+          - name: IP
+            valueFrom: 
+              configMapKeyRef: 
+                key: IP
+                name: global-configmap
+          - name: CAPTCHA_SECRET_KEY
+            valueFrom:
+              configMapKeyRef:
+                name: loki-configmap
+                key: CAPTCHA_SECRET_KEY
+          - name: CAPTCHA_SITE_KEY
+            valueFrom:
+              configMapKeyRef:
+                name: loki-configmap
+                key: CAPTCHA_SITE_KEY
+          - name: CAPTCHA_SECRET_KEY
+            valueFrom: 
+              configMapKeyRef: 
+                  key: CAPTCHA_SECRET_KEY
+                  name: loki-configmap
+          - name: CODES_ENABLED
+            valueFrom: 
+              configMapKeyRef: 
+                  key: CODES_ENABLED
+                  name: loki-configmap
+          - name: LOGIN_URL
+            valueFrom: 
+              configMapKeyRef: 
+                  key: LOGIN_URL
+                  name: loki-configmap
+          - name: BURGER_HEADER
+            valueFrom: 
+              configMapKeyRef: 
+                  key: BURGER_HEADER
+                  name: loki-configmap
+          - name: WHO_WE_ARE_SECTION
+            valueFrom: 
+              configMapKeyRef: 
+                  key: WHO_WE_ARE_SECTION
+                  name: loki-configmap
+          - name: SMTP_HOST
+            valueFrom: 
+              configMapKeyRef: 
+                  key: SMTP_HOST
+                  name: global-configmap
+          - name: SMTP_PORT
+            valueFrom: 
+              configMapKeyRef: 
+                  key: SMTP_PORT
+                  name: global-configmap
+          - name: SMTP_USER
+            valueFrom: 
+              configMapKeyRef: 
+                  key: SMTP_USER
+                  name: global-configmap
+          - name: SMTP_PASSWORD
+            valueFrom: 
+              configMapKeyRef: 
+                  key: SMTP_PASSWORD
+                  name: global-configmap
+          - name: PYTHONUNBUFFERED
+            value: "0"
+        volumeMounts: 
+        - name: tempu-prod-claim0
+          mountPath: /home/ciberseguro/web/staticfiles
+
+
+---
+#6) Service - Loki
+# Expose port 8000 of Loki pod to the internal cluster network
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: loki
+  name: loki
+  namespace: tempu-prod
+spec:
+  ports:
+  - name: "8000"
+    port: 8000
+    targetPort: 8000
+  selector:
+    app: loki
+status:
+  loadBalancer: {}
+
+---
+# 7)
+#=================================
+#---------->BROKKR<--------------#
+#=================================
+
+apiVersion: v1
+kind: ConfigMap
+data:
+  SIGN_PAGE: "4"
+  SIGN_POSITION: "395,270,550,310"
+  YOUSIGN_KEY: Bearer 16469f41145cdc039d8d89a47cc4a8b4
+  YOUSIGN_URL: https://api.yousign.com
+  webhook: "https://riescontrol.ciber-seguro.com/yousign/"
+metadata:
+  creationTimestamp: null
+  labels:
+    app: brokkr
+  name: brokkr-configmap
+  namespace: tempu-prod
+
+
+---
+# 8)  
+# Deployment - Brokkr
+# Pull the image from registry
+# Open Port 5000
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: tempu-prod
+  creationTimestamp: null
+  labels:
+    app: brokkr
+  name: brokkr-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: brokkr
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: brokkr
+    spec:
+      containers:
+      - args:
+        - gunicorn
+        - -b
+        - 0.0.0.0:5000
+        - api:api
+        - --limit-request-line
+        - "0"
+        env:
+          - name: CARRIER_NAME
+            valueFrom: 
+              configMapKeyRef: 
+                key: CARRIER_NAME
+                name: global-configmap
+          - name: IP
+            valueFrom: 
+              configMapKeyRef: 
+                key: IP
+                name: global-configmap
+          - name: YOUSIGN_KEY
+            valueFrom: 
+              configMapKeyRef: 
+                key: YOUSIGN_KEY
+                name: brokkr-configmap
+          - name: YOUSIGN_URL
+            valueFrom: 
+              configMapKeyRef: 
+                key: YOUSIGN_URL
+                name: brokkr-configmap
+          - name: SIGN_POSITION
+            valueFrom: 
+              configMapKeyRef: 
+                key: SIGN_POSITION
+                name: brokkr-configmap
+          - name: SIGN_PAGE
+            valueFrom: 
+              configMapKeyRef: 
+                key: SIGN_PAGE
+                name: brokkr-configmap
+          - name: webhook
+            valueFrom:
+              configMapKeyRef:
+                name: brokkr-configmap
+                key: webhook
+          - name: SMTP_HOST
+            valueFrom: 
+              configMapKeyRef: 
+                  key: SMTP_HOST
+                  name: global-configmap
+          - name: SMTP_PORT
+            valueFrom: 
+              configMapKeyRef: 
+                  key: SMTP_PORT
+                  name: global-configmap
+          - name: SMTP_USER
+            valueFrom: 
+              configMapKeyRef: 
+                  key: SMTP_USER
+                  name: global-configmap
+          - name: SMTP_PASSWORD
+            valueFrom: 
+              configMapKeyRef: 
+                  key: SMTP_PASSWORD
+                  name: global-configmap
+        image: dooingit.azurecr.io/brokkr:tempu_pre
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 5000
+        name: brokkr
+        resources: {}
+      restartPolicy: Always
+status: {}
+---
+# 9) Service - Brokkr
+# Expose port 5000 of Brokkr pod to the internal cluster network
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: brokkr
+  name: brokkr
+  namespace: tempu-prod
+spec:
+  ports:
+  - name: "5000"
+    port: 5000
+    targetPort: 5000
+  selector:
+    app: brokkr
+status:
+  loadBalancer: {}
+---
+# 10)
+#=================================
+#--------->HEIMDALLR<------------#
+#=================================
+# ConfigMap for Heimdallr
+# Only contains the config mode
+apiVersion: v1
+data:
+  CARRIER_BCC_MAIL: martinrubio23@gmail.com
+  CARRIER_MAIL: comunicacion@dooingit.com
+  CONFIG_MODE: config.ProductionConfig
+kind: ConfigMap
+metadata:
+  namespace: tempu-prod
+  creationTimestamp: null
+  labels:
+    app: heimdallr
+  name: heimdallr-configmap
+---
+# 11) Deployment - heimdallr
+# Pull the image from registry
+# Open port 9000
+# Get config mode info from ConfigMap
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: heimdallr
+  name: heimdallr-deployment
+  namespace: tempu-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: heimdallr
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: heimdallr
+    spec:
+      containers:
+      - args:
+        - gunicorn
+        - -b
+        - 0.0.0.0:9000
+        - api:app
+        - --limit-request-line
+        - "0"
+        env:
+        - name: CONFIG_MODE
+          valueFrom:
+            configMapKeyRef:
+              key: CONFIG_MODE
+              name: heimdallr-configmap
+        - name: CLIENT_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: global-configmap
+              key: CLIENT_NAME
+        - name: SQL_ENGINE
+          valueFrom:
+            configMapKeyRef:
+              key: SQL_ENGINE
+              name: global-configmap
+        - name: SQL_DATABASE
+          valueFrom: 
+            configMapKeyRef: 
+              key: SQL_DATABASE
+              name: global-configmap
+        - name: SQL_USER
+          valueFrom: 
+            configMapKeyRef: 
+              key: SQL_USER
+              name: global-configmap
+        - name: SQL_PASSWORD
+          valueFrom: 
+            configMapKeyRef: 
+              key: SQL_PASSWORD
+              name: global-configmap
+        - name: SQL_HOST
+          valueFrom: 
+            configMapKeyRef: 
+              key: SQL_HOST
+              name: global-configmap
+        - name: SQL_PORT
+          valueFrom: 
+            configMapKeyRef: 
+              key: SQL_PORT
+              name: global-configmap
+        - name: CARRIER_BCC_MAIL
+          valueFrom: 
+            configMapKeyRef: 
+              key: CARRIER_BCC_MAIL
+              name: heimdallr-configmap
+        - name: CARRIER_MAIL
+          valueFrom: 
+            configMapKeyRef: 
+              key: CARRIER_MAIL
+              name: heimdallr-configmap
+        - name: SMTP_HOST
+          valueFrom: 
+            configMapKeyRef: 
+                key: SMTP_HOST
+                name: global-configmap
+        - name: SMTP_PORT
+          valueFrom: 
+            configMapKeyRef: 
+                key: SMTP_PORT
+                name: global-configmap
+        - name: SMTP_USER
+          valueFrom: 
+            configMapKeyRef: 
+                key: SMTP_USER
+                name: global-configmap
+        - name: SMTP_PASSWORD
+          valueFrom: 
+            configMapKeyRef: 
+                key: SMTP_PASSWORD
+                name: global-configmap
+        - name: PYTHONUNBUFFERED
+          value: "0"
+        image: dooingit.azurecr.io/heimdallr:tempu_pre
+        imagePullPolicy: Always
+        name: heimdallr
+        ports:
+        - containerPort: 9000
+        resources: {}
+      restartPolicy: Always
+---
+# 12) Service - Heimdallr
+# Expose port 9000 of Heimdallr pod to the internal cluster network
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: heimdallr
+  name: heimdallr
+  namespace: tempu-prod
+spec:
+  ports:
+  - name: "9000"
+    port: 9000
+    targetPort: 9000
+  selector:
+    app: heimdallr
+status:
+  loadBalancer: {}
+---
+
+#=================================
+#------------>NGNIX<-------------#
+#=================================
+
+# 13) Deployment - NGINX
+# Pull Image from registry
+# Read config on persistance volume dumped by loki (TODO in dockerfile)
+# Open Port 80
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: tempu-prod
+  annotations:
+    app: nginx
+  creationTimestamp: null
+  labels:
+    app: nginx
+  name: nginx-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: dooingit.azurecr.io/nginx:tempu_1_0
+        imagePullPolicy: Always
+        name: nginx
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+        resources: {}
+        volumeMounts:
+        - mountPath: /home/ciberseguro/web/staticfiles
+          name: tempu-prod-claim0
+      restartPolicy: Always
+      volumes:
+      - name: tempu-prod-claim0
+        persistentVolumeClaim:
+          claimName: tempu-prod-claim0
+---
+# 14) Service - NGINX
+# Expose port 80 of NGINX pod to the internal cluster network
+
+# apiVersion: v1
+# kind: Service
+# metadata:
+#  creationTimestamp: null
+#  labels:
+#    app: nginx
+#  name: nginx-tempu-service-lb
+#  namespace: tempu-prod
+# spec:
+#  ports:
+#  - name: "http"
+#    port: 80
+#    targetPort: 80
+#  - name: https
+#    port: 443
+#    targetPort: 443
+#  selector:
+#    app: nginx
+#  type: LoadBalancer
+# ---
