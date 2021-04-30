@@ -1,6 +1,4 @@
-containers/notejam-container/.pgpass
-containers/notejam-container/notejam/secrets.json
-secrets/.pgpass
-secrets/secrets.json
+secrets/*.*
 containers/nginx-container/nginx-self.key
 containers/nginx-container/certs/privkey.pem
+containers/notejam-container/.env

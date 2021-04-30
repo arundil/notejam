@@ -1,3 +1,10 @@
+#=============================#
+#     Docker compose.yaml     #
+#=============================#
+#    Created by: Marc Bayón   #
+#                             #
+#=============================#
+
 version: '3.7'
 
 services:
@@ -6,11 +13,14 @@ services:
             context: ./notejam-container
             dockerfile: Dockerfile
         tty: true
-        command: ./manage.py runserver 0.0.0.0:8000
+        env_file: 
+            - ./notejam-container/.env
+        command: /bin/bash -c "env && /notejam/init.sh"
         networks:
             - my-network
         ports:
         - 8000:8000
+
     nginx:
         build: ./nginx-container
         ports:

@@ -2,16 +2,7 @@ import json
 import os
 from django.core.exceptions import ImproperlyConfigured
 
-# Get Secret
-with open(os.path.join('/notejam/', 'secrets.json')) as secrets_file:
-    secrets = json.load(secrets_file)
 
-def get_secret(setting, secrets=secrets):
-    """Get secret setting or fail with ImproperlyConfigured"""
-    try:
-        return secrets[setting]
-    except KeyError:
-        raise ImproperlyConfigured("Set the {} setting".format(setting))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -28,11 +19,11 @@ MANAGERS = ADMINS
 DATABASES = {
        'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'notejam',
-        'USER': 'posgres@dbnotejam',
-        'PASSWORD': get_secret('DB_PASSWORD'),
-        'HOST': 'dbnotejam.postgres.database.azure.com',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_URL'),
+        'PORT': os.environ.get('DB_PORT'),
         'OPTIONS': {'sslmode': 'require'},
 
     },

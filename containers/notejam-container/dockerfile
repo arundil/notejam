@@ -11,21 +11,19 @@ RUN apt-get install postgresql postgresql-contrib -y
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Secure Database password
-COPY .pgpass root/
-ENV PGPASSFILE=/root/.pgpass
-RUN chmod 0600 root/.pgpass
-
 # Copy notejam files
 COPY notejam/ notejam/
+COPY init.sh notejam/
+
+RUN chmod +x notejam/init.sh
 
 # Create Database if does not exits
-RUN echo "SELECT 'CREATE DATABASE notejam' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notejam')\gexec" | psql "host=dbnotejam.postgres.database.azure.com user=posgres@dbnotejam dbname=postgres sslmode=require"
-
+#RUN echo "SELECT 'CREATE DATABASE notejam' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notejam')\gexec" | psql "host=dbnotejam.postgres.database.azure.com user=posgres@dbnotejam dbname=postgres sslmode=require"
+#RUN echo "SELECT 'CREATE DATABASE notejam' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notejam')\gexec" | psql "host=dbnotejam.postgres.database.azure.com user=$(DB_USER) dbname=postgres sslmode=require"
 # Sync & migrate DB
-RUN python /notejam/manage.py dumpdata --indent=2 auth > /notejam/initial_data.json
-RUN python /notejam/manage.py syncdb
-RUN python /notejam/manage.py migrate
+#RUN python /notejam/manage.py dumpdata --indent=2 auth > /notejam/initial_data.json
+#RUN python /notejam/manage.py syncdb
+#RUN python /notejam/manage.py migrate
 
 # Set workdir
 WORKDIR /notejam
