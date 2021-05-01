@@ -1,0 +1,28 @@
+#####################################
+#   Task: 4)Ingress Configuration   #
+#        Role: cluster config       #
+#####################################
+#                                   #
+#       Author:Marc Bayón           #
+#####################################
+
+
+- name: (Cluster Configuration) Get Public IP generated in Azure role.
+  azure_rm_publicipaddress_info:
+    resource_group: "{{projectname}}_{{version}}_RG_VNETS"
+    name: "{{projectname}}-{{version}}-publicIpAddress"
+  register: publicip
+  tags: ingress
+
+- debug:
+    msg: "{{publicip.publicipaddresses[0].ip_address}}"
+  tags: ingress
+
+
+- name: (Cluster Configuration) Check if k8s service has taken the right public IP.
+  shell: "kubectl get service -l app=nginx-ingress --namespace ingress-basic"
+  register: nginx_service 
+  retries: 20
+  delay: 30
+  until: '"{{ publicip.publicipaddresses[0].ip_address }}" in nginx_service.stdout'
+  tags: ingress

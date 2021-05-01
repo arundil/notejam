@@ -1,0 +1,13 @@
+#####################################
+#        hosts fileconfig           #
+#####################################
+#                                   #
+#       Author:Marc Bayon           #
+#####################################
+# Ex 1: Ungrouped hosts, specify before any group headers.
+
+[py3_hosts]
+127.0.0.1 ansible_connection=local
+
+[py3_hosts:vars]
+ansible_python_interpreter=/usr/bin/python3

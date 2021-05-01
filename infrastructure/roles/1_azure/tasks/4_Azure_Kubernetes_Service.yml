@@ -1,0 +1,169 @@
+#####################################
+# Task:4)Azure Kubernetes Service   #
+#           Role: Azure             #
+#####################################
+#                                   #
+#        Author:Marc Bayon          #
+#####################################
+
+- name: (Azure) Check if the cluster is already created
+  azure_rm_aks_info:
+    name: "{{projectname}}K8sCLUSTER"
+    resource_group: "{{projectname}}_{{version}}_RG_K8s"
+  register: aks_info
+  tags: aks  
+
+- set_fact:
+    no_aks: "{{ (aks_info.aks | length) | int }}"
+  tags: aks
+
+  tags: aks
+- name: (Azure) Get facts of K8s subnet
+  azure_rm_subnet_info:
+    resource_group: "{{projectname}}_{{version}}_RG_VNETS"
+    virtual_network_name: "{{projectname}}-vnet-k8s-nodes"
+    name: K8sSubnet
+  register: subnet
+  when: "('delete' in ansible_run_tags) or (no_aks is defined and no_aks == '0')"
+  tags: aks
+
+- name: (Azure) Get facts for previous created Public IP
+  azure_rm_publicipaddress_info:
+    resource_group: "{{projectname}}_{{version}}_RG_VNETS"
+    name: "{{projectname}}-{{version}}-publicIpAddress"
+  register: publicip
+  when: "('delete' in ansible_run_tags) or (no_aks is defined and no_aks == '0')"
+  tags: aks
+
+- name: (Azure) List supported kubernetes version from Azure in region selected
+  azure_rm_aksversion_info:
+      location: "{{ location }}"
+  register: versions
+  when: "('delete' in ansible_run_tags) or (no_aks is defined and no_aks == '0')"
+  tags: aks
+
+# Destroy a Cluster deployment. Uncomment it if you need it, but handle it with CARE!
+# - name: (DELETE!) Destroy last Azure Deployment in case that this exists
+#   azure_rm_deployment:
+#     resource_group: "{{projectname}}_{{version}}_RG_K8s"
+#     name: "{{projectname}}K8sCLUSTER"
+#     state: absent
+#   when: "('delete' in ansible_run_tags) or (no_aks is defined and no_aks == '0')"
+#   tags: aks
+
+
+# Deploy Kubernetes Cluster
+- name: (Azure) Create Azure Kubernetes Service with VMSS (It will take 20-30 min..., go for a coffee)
+  azure_rm_deployment:
+    resource_group: "{{projectname}}_{{version}}_RG_K8s"
+    name: "{{ projectname | regex_replace('[^a-z\\d:]', '')}}{{version | regex_replace('[^a-z\\d:]', '')}}K8sCLUSTER"
+    location: "{{location}}"
+    template: 
+      $schema: "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#"
+      contentVersion: "1.0.0.0"
+      parameters:
+        K8sCLUSTER_name:
+          defaultValue: "{{ projectname | regex_replace('[^a-z\\d:]', '')}}{{version | regex_replace('[^a-z\\d:]', '')}}K8sCLUSTER"
+          type: "string"
+        linuxgpu_min_count: 
+          defaultValue: "{{ linux_gpu_min_count }}"
+          type: "int"
+        linuxgpu_max_count: 
+          defaultValue: "{{ linux_gpu_max_count }}"
+          type: "int"
+        linuxcpu_min_count: 
+          defaultValue: "{{ linux_cpu_min_count }}"
+          type: "int"
+        linuxcpu_max_count: 
+          defaultValue: "{{ linux_cpu_max_count }}"
+          type: "int"
+        windowscpu_min_count: 
+          defaultValue: "{{ windows_cpu_min_count }}"
+          type: "int"
+        windowscpu_max_count: 
+          defaultValue: "{{ windows_cpu_max_count }}"
+          type: "int"
+      resources:
+      ######################>BEGIN AKS Config<###############################
+        - type: "Microsoft.ContainerService/managedClusters"
+          name: "[parameters('K8sCLUSTER_name')]"
+          apiVersion: "2020-02-01"
+          location: "{{location}}"
+          properties:
+            kubernetesVersion: "{{ versions.azure_aks_versions[-1] }}"
+            dnsPrefix: "{{ projectname | regex_replace('[^a-z\\d:]', '')}}{{version | regex_replace('[^a-z\\d:]', '')}}dns"
+            agentPoolProfiles:
+      ####################<BEGIN AGENT POOL LINUX CPU>#######################
+              - name: linuxcpu
+                count: "[parameters('linuxcpu_min_count')]"
+                vmSize: "{{ linux_cpu_node }}"
+                osDiskSizeGB: 100
+                vnetSubnetID: "{{ subnet.subnets[0].id }}"
+                maxPods: 60
+                type: VirtualMachineScaleSets
+                maxCount: "[parameters('linuxcpu_max_count')]"
+                minCount: "[parameters('linuxcpu_min_count')]"
+                enableAutoScaling: true
+                orchestratorVersion: "{{ versions.azure_aks_versions[-1] }}"
+                osType: Linux
+      #####################>END AGENT POOL LINUX CPU<########################
+      ###################<BEGIN AGENT POOL WINDOWS CPU>######################
+              - name: wincpu
+                count: "[parameters('windowscpu_min_count')]"
+                vmSize: "{{ windows_cpu_node }}"
+                osDiskSizeGB: 100
+                vnetSubnetID: "{{ subnet.subnets[0].id }}"
+                maxPods: 30
+                type: VirtualMachineScaleSets
+                maxCount: "[parameters('windowscpu_max_count')]"
+                minCount: "[parameters('windowscpu_min_count')]"
+                enableAutoScaling: true
+                orchestratorVersion: "{{ versions.azure_aks_versions[-1] }}"
+                enableNodePublicIP: False
+                osType: Windows
+      ###################<END AGENT POOL WINDOWS CPU>########################
+            linuxProfile:
+              adminUsername: azureuser
+              ssh:
+                publicKeys:
+                  - keyData: ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAg/uWyZP62dj9I1keFKxPlfkpsMe5EvfnJ3E3qkQtJvj09yMzT5lkVmES5A858FVRHOu0vD2TRoretjbuRIj/rhnq5meofMd2+l8YzdAq7QW1/xlTJp0RynuItZI3RkeSVtOM+rVWb/ex5OL+uZ19T+xYPobpy5AhujLeYh4u1E8C3fkPg8G3qjnajbYkAOT8yViAl1GYRJWJSK7gEXEXHmVOUbsB6D1sQP4wW++NHUCLQiZHYR5bvOR+Dy8ye+tYAbz4odbThO9iTIUM/xUYUxI5r5Yd0LEYN2sNehEoxfvqY2yp7wrgbuHtH7mOxu3Rkp+YIzMAQSWJWTmIQRL3tQ== acs-aks
+            windowsProfile:
+              adminUsername: "azureuser"
+              adminPassword: "1-1EepcDlcylt"
+            servicePrincipalProfile:
+              clientId: "{{ client_id }}"
+              secret: " {{ secret }}"
+            enableRBAC: true
+            enablePodSecurityPolicy: false
+            networkProfile:
+              networkPlugin: azure
+              serviceCidr: 10.0.0.0/16
+              dnsServiceIP: 10.0.0.10
+              dockerBridgeCidr: 172.20.0.1/16
+            autoScalerProfile:
+              max-graceful-termination-sec: '600'
+              scale-down-delay-after-add: 10m
+              scale-down-delay-after-delete: 10s
+              scale-down-delay-after-failure: 3m
+              scale-down-unneeded-time: 10m
+              scale-down-unready-time: 20m
+              scale-down-utilization-threshold: '0.5'
+              scan-interval: 10s
+      ######################>END AKS Config<#################################
+  when: "('delete' in ansible_run_tags) or (no_aks is defined and no_aks == '0')"
+  tags: aks
+
+- name: (Azure) Get Cluster Credentials
+  shell: "az aks get-credentials --resource-group {{projectname}}_{{version}}_RG_K8s --name {{ projectname | regex_replace('[^a-z\\d:]', '')}}{{version | regex_replace('[^a-z\\d:]', '')}}K8sCLUSTER --overwrite-existing"
+  tags: aks
+
+# --> After version 16.X of kubernetes, this is not needed anymore. If you install a previous version, consider to uncomment these lines.
+# - name: (Azure) Create a cluster role to have access to Kubernetes Dashboard in AKS
+#   shell: "kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard"
+#   tags: aks
+
+
+
+
+
+

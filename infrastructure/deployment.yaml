@@ -1,0 +1,16 @@
+#####################################
+#         deployment.yaml           #
+#####################################
+#        Ansible scripts            #
+#       Author:Marc Bayon           #
+#####################################
+
+- hosts: localhost
+  vars_files:
+    - group_vars/config_file.yml
+    - group_vars/secrets.yml
+
+  roles:
+    - {role: 0_prerrequisites, tags: pre }
+    - {role: 1_azure, tags: azure }
+    - {role: 2_clusterconfig, tags: cconfig}

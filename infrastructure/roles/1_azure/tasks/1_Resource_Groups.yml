@@ -1,0 +1,19 @@
+#####################################
+#        Task: 1)Resource Groups    #
+#           Role: Azure             #
+#####################################
+#                                   #
+#        Author:Marc Bayon          #
+#####################################
+
+- name: (Azure) Create Resource Group for Kubernetes
+  tags: 'rg'
+  azure_rm_resourcegroup:
+    name: "{{projectname}}_{{version}}_RG_K8s"
+    location: "{{location}}"
+
+- name: (Azure) Create Resource Group for Database
+  tags: 'rg'
+  azure_rm_resourcegroup:
+    name: "{{projectname}}_{{version}}_RG_DB"
+    location: "{{location}}"

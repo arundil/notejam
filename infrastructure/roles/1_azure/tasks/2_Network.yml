@@ -1,0 +1,15 @@
+#####################################
+#        Task: 2) Network           #
+#           Role: Azure             #
+#####################################
+#                                   #
+#       Author:Marc Bayón           #
+#####################################
+
+- name: (Azure) Create a public ip address exernal K8s Cluster access
+  azure_rm_publicipaddress:
+    resource_group: "{{projectname}}_{{version}}_RG_K8s"
+    name: "{{projectname}}-{{version}}-publicIpAddress"
+    allocation_method: static
+    domain_name: "{{ projectname | regex_replace('[^a-z\\d:]', '')}}{{version | regex_replace('[^a-z\\d:]', '')}}"
+  tags: vnets

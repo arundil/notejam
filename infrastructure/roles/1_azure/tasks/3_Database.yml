@@ -1,0 +1,46 @@
+#####################################
+#        Task: 3) Database          #
+#           Role: Azure             #
+#####################################
+#                                   #
+#       Author:Marc Bayón           #
+#####################################
+
+- name: (Azure) Create (or update) PostgreSQL Server
+  azure_rm_postgresqlserver:
+    resource_group: "{{projectname}}_{{version}}_RG_DB"
+    name: "{{ projectname | regex_replace('[^a-z\\d:]', '')}}{{version | regex_replace('[^a-z\\d:]', '')}}-db"
+    sku:
+      name: B_Gen5_1
+      tier: Basic
+    location: "{{location}}"
+    storage_mb: 5120
+    enforce_ssl: True
+    storage_autogrow: True
+    admin_username: posgres
+    admin_password: "{{dbsecret}}"
+  tags: db
+
+
+- name: (Cluster Configuration) Get Public IP generated in Azure role.
+  azure_rm_publicipaddress_info:
+    resource_group: "{{projectname}}_{{version}}_RG_K8s"
+    name: "{{projectname}}-{{version}}-publicIpAddress"
+  register: publicip
+  tags: db
+
+- debug:
+    msg: "{{publicip.publicipaddresses[0].ip_address}}"
+  tags: db
+
+- name: (Azure) Create (or update) PostgreSQL firewall rule
+  azure_rm_postgresqlfirewallrule:
+    resource_group: "{{projectname}}_{{version}}_RG_DB"
+    server_name: "{{ projectname | regex_replace('[^a-z\\d:]', '')}}{{version | regex_replace('[^a-z\\d:]', '')}}-db"
+    name: k8s
+    start_ip_address: "{{publicip.publicipaddresses[0].ip_address}}"
+    end_ip_address: "{{publicip.publicipaddresses[0].ip_address}}"
+  tags: db
+
+# - name: (Azure) Create a backup Vault
+#     msg: "Todo"

@@ -1,0 +1,15 @@
+#####################################
+#      Role: clusterconfig          #
+#####################################
+#                                   #
+#        Author:Marc Bayon          #
+#####################################
+
+- name: (Cluster Configuration) Create necessary namespaces inside the cluster
+  include_tasks: 1_CreateNamespaces.yml
+  tags: namespaces
+
+- name: (Cluster Configuration) Deploy K8s Components and asociate NGINX with the public IP address
+  include_tasks: 2_Install_k8s_components.yml
+  tags: k8s
+

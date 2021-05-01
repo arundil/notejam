@@ -1,0 +1,105 @@
+#####################################
+#        Role: Prerrequisites       #
+#####################################
+#                                   #
+#        Author: Marc Bayón         #
+#####################################
+
+## Install Debian/Ubuntu Packages ##
+
+- name: (Pre) Install a list of packages for Debian/Ubuntu
+  become: yes
+  apt:
+    name: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'gnupg2', 'python3-pip']
+    force_apt_get: yes
+    state: "latest"
+  tags: pre
+
+## Install Azure Pip Module ##
+
+- name: (Pre) Install pip packages
+  pip:
+    requirements: "{{role_path}}/files/requirements-azure.txt"
+    executable: "pip3"
+  tags: pre
+
+## Install AZURE CLI ##
+
+- name: (Pre) Check Azure CLI is installed
+  command: dpkg-query -W 'azure-cli'
+  ignore_errors: True
+  register: isazurecli
+  tags: pre
+
+- name: (Pre) Download and install the Microsoft signing key for Azure CLI
+  become: yes
+  shell:  |
+    curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
+    gpg --dearmor | \
+    sudo tee /etc/apt/trusted.gpg.d/microsoft.asc.gpg > /dev/null
+  when: isazurecli is failed 
+  tags: pre
+
+- name: (Pre) Get your OS version
+  command: lsb_release -cs
+  register: OsVersion
+  when: isazurecli is failed
+  tags: pre
+
+- name: (Pre) Configure upstream APT repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {{OsVersion.stdout}} main"
+    state: "present"
+    update_cache: True
+  become: yes
+  when: isazurecli is failed
+  tags: pre
+
+- name: (Pre) Update repository information and install/upgrade the azure-cli package
+  become: yes
+  apt:
+    name: azure-cli 
+    update_cache: yes
+    force_apt_get: yes
+    state: "latest"
+  ignore_errors: True
+  tags: pre
+
+- name: (Pre) Install/Update aks extension
+  shell: az extension add --name aks-preview
+  tags: pre
+
+
+## Install Kubectl ##
+
+- name: (Pre) Check if Kubectl is installed
+  command: dpkg-query -W 'kubectl'
+  ignore_errors: True
+  register: iskubectl
+  tags: pre
+
+- name: (Pre) Download and install kubectl signing key
+  become: yes
+  shell:  |
+    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - 
+  when: iskubectl is failed 
+  tags: pre
+
+- name: (Pre) Configure upstream APT repository for kubectl
+  apt_repository:
+    repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+    state: "present"
+    update_cache: True
+  become: yes
+  when: iskubectl is failed 
+  tags: pre
+
+- name: (Pre) Update repository information and install/upgrade the kubectl package
+  become: yes
+  apt:
+    name: kubectl 
+    update_cache: yes
+    force_apt_get: yes
+    state: "latest"
+  ignore_errors: True
+  tags: pre

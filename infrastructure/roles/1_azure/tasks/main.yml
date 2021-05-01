@@ -1,0 +1,31 @@
+#####################################
+#           Role: Azure             #
+#####################################
+#                                   #
+#        Author:Marc Bayon          #
+#####################################
+
+- name: (Azure) login
+  tags: always
+  shell: az login --service-principal --username "{{client_id}}" --password "{{secret}}" --tenant "{{tenant}}"
+
+- name: (Azure) Set Subscription ID
+  tags: always
+  shell: az account set --subscription "{{subscription_id}}"
+
+- name: (Azure) Resource Groups
+  tags: rg
+  include_tasks: 1_Resource_Groups.yml
+
+- name: (Azure) Network
+  tags: vnets
+  include_tasks: 2_Network.yml
+
+- name: (Azure) Database
+  tags: db
+  include_tasks: 3_Database.yml
+
+- name: (Azure) Azure Kubernetes Service
+  include_tasks: 4_Azure_Kubernetes_Service.yml
+  tags: aks
+  

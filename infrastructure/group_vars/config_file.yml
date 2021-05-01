@@ -1,0 +1,33 @@
+
+#####################################
+#         Config_file.yaml          #
+#####################################
+#        Ansible scripts            #
+#      Author:Marc Bayón            #
+#####################################
+
+# Config File. Fill it up with your data
+# Step 1) Manualy activate AKS azure preview: https://docs.microsoft.com/en-us/azure/aks/windows-container-cli
+# Step 2) Azure CLI 2.2.0 or superior is needed. https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest 
+# After the cluster is created, to access to K8s dashboard, is needed to create an user https://medium.com/@kanrangsan/creating-admin-user-to-access-kubernetes-dashboard-723d6c9764e4 
+#==============Azure Credentials=====================
+# Fill it up with your service principal credentials
+subscription_id: ce8b1720-06fb-4fb4-ad6b-adf26a978067
+client_id: 7fe27ae3-70f5-4a46-919b-aa9ed2fe8e13
+tenant: b4bc7e59-9a34-4622-ab54-d7a1a680f47a
+#IMPORTANT: choose ONLY one of those areas--> eastus2,northeurope,centralus,westeurope or australiaeast.
+location: westeurope
+
+#===============Project Data=========================
+projectname: notejam # (Only alphanumeric characters, lower case, lenth max 10)
+version: "1_0" # (Only alphanumeric characters, lower case, max lenth 3)
+
+#===========Kubernetes_Nodes_Sizes===================
+# Check FIRST VM availability in your Azure location. It's recomended to choose "WestEurope" area
+# https://azure.microsoft.com/en-us/global-infrastructure/services/?products=virtual-machines
+linux_cpu_node: "Standard_B2s" # 2 CPUs, 4 GiB RAM
+linux_cpu_min_count: 1
+linux_cpu_max_count: 1
+
+# K8s main namespace
+namespace: notejam
