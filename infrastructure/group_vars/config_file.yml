@@ -12,9 +12,9 @@
 # After the cluster is created, to access to K8s dashboard, is needed to create an user https://medium.com/@kanrangsan/creating-admin-user-to-access-kubernetes-dashboard-723d6c9764e4 
 #==============Azure Credentials=====================
 # Fill it up with your service principal credentials
-subscription_id: ce8b1720-06fb-4fb4-ad6b-adf26a978067
-client_id: 7fe27ae3-70f5-4a46-919b-aa9ed2fe8e13
-tenant: b4bc7e59-9a34-4622-ab54-d7a1a680f47a
+subscription_id: 306a2273-a31f-43ac-b17a-c182173d3297
+client_id: 124eb0aa-c717-4bc7-8e22-467632958625
+tenant: f3bb2212-cb72-4558-9db2-1038314bab1c
 #IMPORTANT: choose ONLY one of those areas--> eastus2,northeurope,centralus,westeurope or australiaeast.
 location: westeurope
 
