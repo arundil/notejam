@@ -47,7 +47,7 @@
         type: VirtualMachineScaleSets
         max_count: "{{ linux_cpu_max_count }}"
         min_count: "{{ linux_cpu_min_count }}"
-#        enable_rbac: yes
+        availability_zones: 3
   tags: aks
 
 - name: (Azure) Get Cluster Credentials
