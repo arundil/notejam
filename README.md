@@ -3,6 +3,8 @@ Azure Cloud implementation. Source app https://github.com/nordcloud/notejam
 
 Framework selected: Django
 
+URL: https://13.95.107.180/ 
+
 # Architecture
 Originaly, Notejam was developed as a single monolitic solution (Web app + database).
 
