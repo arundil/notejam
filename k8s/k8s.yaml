@@ -23,7 +23,7 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 data:
-  DB_URL: "dbnotejam.postgres.database.azure.com"
+  DB_URL: "notejam10-db.postgres.database.azure.com"
   DB_PORT: "5432"
   DB_NAME: "notejam"
 metadata:

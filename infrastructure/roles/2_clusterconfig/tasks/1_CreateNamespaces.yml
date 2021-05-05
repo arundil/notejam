@@ -1,24 +1,13 @@
 #####################################
-#   Task: 2)Install Namespaces      #
+#   Task: 1)Install Namespaces      #
 #        Role: cluster config       #
 #####################################
 #                                   #
 #        Author:Marc Bayon          #
 #####################################
 
-- name: (Cluster Configuration) Verify the ingress namespace exits
-  shell: kubectl get namespace ingress-basic
-  ignore_errors: yes
-  register: namespace_ingress_result
-  tags: namespaces
-
-- set_fact:
-    exitsIngrns: "{{namespace_ingress_result.stdout_lines}}"
-  tags: namespaces
-
-
 - name: (Cluster Configuration) Verify the platform namespace exits
-  shell: kubectl get namespace adasplatform
+  shell: kubectl get namespace notejam
   ignore_errors: yes
   register: namespace_platf_result
   tags: namespaces
@@ -28,6 +17,6 @@
   tags: namespaces
 
 - name: (Cluster Configuration) Create ingress namespace
-  shell: kubectl create namespace adasplatform
+  shell: kubectl create namespace notejam
   when: exitsPlatfns|length == 0
   tags: namespaces

@@ -1,5 +1,5 @@
 #####################################
-#   Task: 4)Ingress Configuration   #
+#   Task: 2)K8s_components          #
 #        Role: cluster config       #
 #####################################
 #                                   #
@@ -12,11 +12,11 @@
     resource_group: "{{projectname}}_{{version}}_RG_VNETS"
     name: "{{projectname}}-{{version}}-publicIpAddress"
   register: publicip
-  tags: ingress
+  tags: k8s
 
 - debug:
     msg: "{{publicip.publicipaddresses[0].ip_address}}"
-  tags: ingress
+  tags: k8s
 
 
 - name: (Cluster Configuration) Check if k8s service has taken the right public IP.
@@ -25,4 +25,182 @@
   retries: 20
   delay: 30
   until: '"{{ publicip.publicipaddresses[0].ip_address }}" in nginx_service.stdout'
-  tags: ingress
+  tags: k8s
+
+
+- name: (Cluster Configuration) Deploy K8s File
+    shell: | 
+    cat <<EOF |  kubectl apply -f -
+    # 2) 
+    # Global ConfigMap for all the pods
+
+    apiVersion: v1
+    kind: ConfigMap
+    data:
+      DB_URL: "notejam10-db.postgres.database.azure.com"
+      DB_PORT: "5432"
+      DB_NAME: "notejam"
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: all
+      name: global-configmap
+      namespace: notejam  
+    ---
+    # 3) 
+    #=================================
+    #----------->NOTEJAM<------------#
+    #=================================
+    # ConfigMap for notejam
+
+    # 5) Deployment- Notejam
+    # Pull the container from registry
+    # Open Port 8000
+    # Configure DB connection reading from the ConfigMap
+
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata: 
+      labels: 
+        app: notejam
+      name: notejam-deployment
+      namespace: notejam
+    spec: 
+      replicas: 1
+      selector:
+        matchLabels:
+          app: notejam
+      strategy: 
+        type: Recreate
+      template: 
+        metadata: 
+          labels: 
+            app: notejam
+        spec:
+          restartPolicy: Always
+          containers:
+          - name: notejam
+            image: "arundil/notejam:latest"
+            imagePullPolicy: Always
+            ports:
+            - containerPort: 8000
+            command: 
+              - /bin/bash
+              - -c
+              - /notejam/init.sh
+            env: 
+              - name: DB_URL
+                valueFrom: 
+                  configMapKeyRef: 
+                    key: DB_URL
+                    name: global-configmap
+              - name: DB_PORT
+                valueFrom: 
+                  configMapKeyRef: 
+                    name: global-configmap
+                    key: DB_PORT
+              - name: DB_NAME
+                valueFrom: 
+                  configMapKeyRef: 
+                    name: global-configmap
+                    key: DB_NAME
+              - name: DB_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: dbsecret
+                    key: DB_USER
+              - name: DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: dbsecret
+                    key: DB_PASSWORD
+
+    ---
+    #4) Service - Notetam
+    # Expose port 8000 pod to the internal cluster network
+
+    apiVersion: v1
+    kind: Service
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: notejam
+      name: notejam
+      namespace: notejam
+    spec:
+      ports:
+      - name: "8000"
+        port: 8000
+        targetPort: 8000
+      selector:
+        app: notejam
+    status:
+      loadBalancer: {}
+
+    ---
+
+    #=================================
+    #------------>NGNIX<-------------#
+    #=================================
+
+    # 5) Deployment - NGINX
+    # Pull Image from registry
+    # Open Port 80 & 443
+
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      namespace: notejam
+      annotations:
+        app: nginx
+      creationTimestamp: null
+      labels:
+        app: nginx
+      name: nginx-deployment
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: nginx
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app: nginx
+        spec:
+          containers:
+          - image: arundil/nginx:latest
+            imagePullPolicy: Always
+            name: nginx
+            ports:
+            - containerPort: 80
+            - containerPort: 443
+            resources: {}
+          restartPolicy: Always
+    ---
+    # 6) Service - NGINX
+    # Expose port 80 of NGINX pod to the internal cluster network
+
+    apiVersion: v1
+    kind: Service
+    metadata:
+    creationTimestamp: null
+    labels:
+      app: nginx
+    name: nginx-service-lb
+    namespace: notejam
+    spec:
+    ports:
+    - name: "http"
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443
+    selector:
+      app: nginx
+    type: LoadBalancer
+    ---
+  tags: k8s
