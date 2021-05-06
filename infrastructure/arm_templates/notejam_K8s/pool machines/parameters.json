@@ -1,0 +1,30 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "loadBalancers_kubernetes_name": {
+            "value": null
+        },
+        "virtualNetworks_aks_vnet_36442980_name": {
+            "value": null
+        },
+        "routeTables_aks_agentpool_36442980_routetable_name": {
+            "value": null
+        },
+        "networkSecurityGroups_aks_agentpool_36442980_nsg_name": {
+            "value": null
+        },
+        "virtualMachineScaleSets_aks_default_36442980_vmss_name": {
+            "value": null
+        },
+        "publicIPAddresses_kubernetes_ae971469167a84f7aaecbd81a9a3e931_name": {
+            "value": null
+        },
+        "galleries_AKSUbuntu_externalid": {
+            "value": null
+        },
+        "disks_aks_default_36442980aks_default_36442980_OS__1_e096f07100e242aebe7602e8b844224f_externalid": {
+            "value": null
+        }
+    }
+}

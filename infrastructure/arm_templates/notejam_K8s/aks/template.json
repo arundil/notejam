@@ -1,0 +1,114 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "managedClusters_notejam10K8sCLUSTER_name": {
+            "defaultValue": "notejam10K8sCLUSTER",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.ContainerService/managedClusters",
+            "apiVersion": "2021-02-01",
+            "name": "[parameters('managedClusters_notejam10K8sCLUSTER_name')]",
+            "location": "westeurope",
+            "sku": {
+                "name": "Basic",
+                "tier": "Free"
+            },
+            "properties": {
+                "kubernetesVersion": "1.20.5",
+                "dnsPrefix": "notejamK8sCLUSTER",
+                "agentPoolProfiles": [
+                    {
+                        "name": "default",
+                        "count": 1,
+                        "vmSize": "Standard_B2s",
+                        "osDiskSizeGB": 128,
+                        "osDiskType": "Managed",
+                        "maxPods": 110,
+                        "type": "VirtualMachineScaleSets",
+                        "maxCount": 1,
+                        "minCount": 1,
+                        "enableAutoScaling": true,
+                        "orchestratorVersion": "1.20.5",
+                        "mode": "User",
+                        "osType": "Linux"
+                    }
+                ],
+                "linuxProfile": {
+                    "adminUsername": "azureuser",
+                    "ssh": {
+                        "publicKeys": [
+                            {
+                                "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAg/uWyZP62dj9I1keFKxPlfkpsMe5EvfnJ3E3qkQtJvj09yMzT5lkVmES5A858FVRHOu0vD2TRoretjbuRIj/rhnq5meofMd2+l8YzdAq7QW1/xlTJp0RynuItZI3RkeSVtOM+rVWb/ex5OL+uZ19T+xYPobpy5AhujLeYh4u1E8C3fkPg8G3qjnajbYkAOT8yViAl1GYRJWJSK7gEXEXHmVOUbsB6D1sQP4wW++NHUCLQiZHYR5bvOR+Dy8ye+tYAbz4odbThO9iTIUM/xUYUxI5r5Yd0LEYN2sNehEoxfvqY2yp7wrgbuHtH7mOxu3Rkp+YIzMAQSWJWTmIQRL3tQ== acs-aks"
+                            }
+                        ]
+                    }
+                },
+                "servicePrincipalProfile": {
+                    "clientId": "124eb0aa-c717-4bc7-8e22-467632958625"
+                },
+                "addonProfiles": {
+                    "kubeDashboard": {
+                        "enabled": false
+                    }
+                },
+                "nodeResourceGroup": "[concat('MC_notejam_1_0_RG_K8s_', parameters('managedClusters_notejam10K8sCLUSTER_name'), '_westeurope')]",
+                "enableRBAC": false,
+                "networkProfile": {
+                    "networkPlugin": "kubenet",
+                    "loadBalancerSku": "Basic",
+                    "podCidr": "10.244.0.0/16",
+                    "serviceCidr": "10.0.0.0/16",
+                    "dnsServiceIP": "10.0.0.10",
+                    "dockerBridgeCidr": "172.17.0.1/16",
+                    "outboundType": "loadBalancer"
+                },
+                "autoScalerProfile": {
+                    "balance-similar-node-groups": "false",
+                    "expander": "random",
+                    "max-empty-bulk-delete": "10",
+                    "max-graceful-termination-sec": "600",
+                    "max-node-provision-time": "15m",
+                    "max-total-unready-percentage": "45",
+                    "new-pod-scale-up-delay": "0s",
+                    "ok-total-unready-count": "3",
+                    "scale-down-delay-after-add": "10m",
+                    "scale-down-delay-after-delete": "10s",
+                    "scale-down-delay-after-failure": "3m",
+                    "scale-down-unneeded-time": "10m",
+                    "scale-down-unready-time": "20m",
+                    "scale-down-utilization-threshold": "0.5",
+                    "scan-interval": "10s",
+                    "skip-nodes-with-local-storage": "false",
+                    "skip-nodes-with-system-pods": "true"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.ContainerService/managedClusters/agentPools",
+            "apiVersion": "2021-02-01",
+            "name": "[concat(parameters('managedClusters_notejam10K8sCLUSTER_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerService/managedClusters', parameters('managedClusters_notejam10K8sCLUSTER_name'))]"
+            ],
+            "properties": {
+                "count": 1,
+                "vmSize": "Standard_B2s",
+                "osDiskSizeGB": 128,
+                "osDiskType": "Managed",
+                "maxPods": 110,
+                "type": "VirtualMachineScaleSets",
+                "maxCount": 1,
+                "minCount": 1,
+                "enableAutoScaling": true,
+                "orchestratorVersion": "1.20.5",
+                "mode": "User",
+                "osType": "Linux"
+            }
+        }
+    ]
+}
