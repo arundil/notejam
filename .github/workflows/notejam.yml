@@ -1,12 +1,16 @@
 name: Notejam
 
+env:
+  CLUSTER_NAME: notejam10K8sCLUSTER
+  CLUSTER_RESOURCE_GROUP: notejam_1_0_RG_K8s
+
 on:
   push:
     branches:
       - 'main'
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -49,7 +53,7 @@ jobs:
           fi
       
   push-dockerhub:
-    needs: test
+    needs: build-and-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -73,6 +77,11 @@ jobs:
           context: containers/notejam-container/
           push: true
           tags: arundil/notejam:latest
+      
+      - name: Create priv key for https
+        run: |
+          touch containers/nginx-container/certs/privkey.pem
+          echo "${{ secrets.PRIVKEY }}" >> containers/nginx-container/certs/privkey.pem
 
       - name: Build and push nginx
         uses: docker/build-push-action@v2
@@ -80,3 +89,22 @@ jobs:
           context: containers/nginx-container/
           push: true
           tags: arundil/nginx:latest
+
+    push-kubernetes:
+      needs: push-dockerhub
+      runs-on: ubuntu-latest
+      steps:
+
+        # Set the target Azure Kubernetes Service (AKS) cluster. 
+        - uses: azure/aks-set-context@v1
+          with:
+            creds: '${{ secrets.AZURE_CREDENTIALS }}'
+            cluster-name: ${{ env.CLUSTER_NAME }}
+            resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+        
+        # Deploy app to AKS
+        - name: Deploy to kubernetes
+          run:  kubectl apply -f k8s/k8s.yaml
+
+
+
