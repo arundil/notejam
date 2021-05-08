@@ -1,4 +1,11 @@
-name: Notejam
+#=============================#
+#     notejam Ci/CD .yaml     #
+#=============================#
+#    Created by: Marc Bayón   #
+#                             #
+#=============================#
+
+name: Notejam CI/CD
 
 env:
   CLUSTER_NAME: notejam10K8sCLUSTER
@@ -90,21 +97,21 @@ jobs:
           push: true
           tags: arundil/nginx:latest
 
-    push-kubernetes:
-      needs: push-dockerhub
-      runs-on: ubuntu-latest
-      steps:
-
-        # Set the target Azure Kubernetes Service (AKS) cluster. 
-        - uses: azure/aks-set-context@v1
-          with:
-            creds: '${{ secrets.AZURE_CREDENTIALS }}'
-            cluster-name: ${{ env.CLUSTER_NAME }}
-            resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
-        
-        # Deploy app to AKS
-        - name: Deploy to kubernetes
-          run:  kubectl apply -f k8s/k8s.yaml
+  push-kubernetes:
+    needs: push-dockerhub
+    runs-on: ubuntu-latest
+    steps:
+      # Set the target Azure Kubernetes Service (AKS) cluster. 
+      - name: Log into Azure
+        uses: azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZURE_CREDENTIALS }}'
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+      
+      # Deploy app to AKS
+      - name: Deploy to AKS
+        run:  kubectl apply -f k8s/k8s.yaml
 
 
 
