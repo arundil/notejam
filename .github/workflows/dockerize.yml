@@ -30,4 +30,4 @@ jobs:
         with:
           context: containers/notejam-container/
           push: true
-          tags: user/app:latest
+          tags: arundil/notejam:latest
