@@ -17,7 +17,7 @@ jobs:
           DB_NAME: "notejam"
           DB_USER: "posgres@dbnotejam"
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          directory: containers
+          directory: containers/notejam-container/
           file_name: .env
       - uses: actions/checkout@v2
       - name: Build the stack
