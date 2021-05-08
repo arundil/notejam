@@ -36,43 +36,46 @@ jobs:
 
       - name: Test if works
         run: |
-          CODE=`curl --write-out '%{http_code}' -k  --url 'https://localhost' `
+          CODE=`curl --write-out '%{http_code}' -k  --url 'https://localhost/signin/?next=/'`
           if [ $CODE!="200" ] 
           then
               echo "FAILURE"
+              echo "Error [HTTP status: $CODE]"
+              exit 1
           else
               echo "SUCCESS"
+              echo "[HTTP status: $CODE]"
+              exit 0
           fi
       
-  # push-dockerhub:
-  #   runs-on: ubuntu-latest
-  #   steps:
-      # -
-      #   name: Checkout
-      #   uses: actions/checkout@v2
-  #     -
-  #       name: Set up QEMU
-  #       uses: docker/setup-qemu-action@v1
-  #     -
-  #       name: Set up Docker Buildx
-  #       uses: docker/setup-buildx-action@v1
-  #     -
-  #       name: Login to DockerHub
-  #       uses: docker/login-action@v1
-  #       with:
-  #         username: ${{ secrets.DOCKERHUB_USERNAME }}
-  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
-  #     -
-  #       name: Build and push notejam
-  #       uses: docker/build-push-action@v2
-  #       with:
-  #         context: containers/notejam-container/
-  #         push: true
-  #         tags: arundil/notejam:latest
+  push-dockerhub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
 
-  #       name: Build and push nginx
-  #       uses: docker/build-push-action@v2
-  #       with:
-  #         context: containers/nginx-container/
-  #         push: true
-  #         tags: arundil/nginx:latest
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push notejam
+        uses: docker/build-push-action@v2
+        with:
+          context: containers/notejam-container/
+          push: true
+          tags: arundil/notejam:latest
+
+      - name: Build and push nginx
+        uses: docker/build-push-action@v2
+        with:
+          context: containers/nginx-container/
+          push: true
+          tags: arundil/nginx:latest
