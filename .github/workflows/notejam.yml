@@ -20,6 +20,13 @@ jobs:
           echo DB_USER="posgres@dbnotejam" >> containers/notejam-container/.env
           echo DB_PASSWORD="${{ secrets.DB_PASSWORD }}" >> containers/notejam-container/.env
           cat containers/notejam-container/.env
+        
+      - name: Create priv key for https
+        run:
+          touch containers/nginx-container/certs/privkey.pem
+          echo ${{ secrets.DB_PASSWORD }} >> containers/nginx-container/certs/privkey.pem
+          cat containers/nginx-container/certs/privkey.pem
+
       - name: Build the stack
         run: docker-compose -f containers/docker-compose.yaml up -d
       - name: Test
