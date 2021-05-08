@@ -5,6 +5,9 @@ Framework selected: Django
 
 URL: https://51.144.186.93/
 
+## Pipelines status
+[![Dockerize](https://github.com/arundil/notejam/actions/workflows/dockerize.yml/badge.svg)](https://github.com/arundil/notejam/actions/workflows/dockerize.yml)
+
 # Architecture
 Originaly, Notejam was developed as a single monolitic solution (Web app + database).
 
