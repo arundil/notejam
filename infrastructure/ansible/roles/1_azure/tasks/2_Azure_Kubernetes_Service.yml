@@ -32,13 +32,15 @@
     resource_group: "{{projectname}}_{{version}}_RG_K8s"
     location: "{{location}}"
     dns_prefix: "{{projectname}}K8sCLUSTER"
-    kubernetes_version: "{{ versions.azure_aks_versions[-1] }}"
+    kubernetes_version: "{{k8sversion}}" #"{{ versions.azure_aks_versions[-1] }}"
     linux_profile:
       admin_username: azureuser
       ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAg/uWyZP62dj9I1keFKxPlfkpsMe5EvfnJ3E3qkQtJvj09yMzT5lkVmES5A858FVRHOu0vD2TRoretjbuRIj/rhnq5meofMd2+l8YzdAq7QW1/xlTJp0RynuItZI3RkeSVtOM+rVWb/ex5OL+uZ19T+xYPobpy5AhujLeYh4u1E8C3fkPg8G3qjnajbYkAOT8yViAl1GYRJWJSK7gEXEXHmVOUbsB6D1sQP4wW++NHUCLQiZHYR5bvOR+Dy8ye+tYAbz4odbThO9iTIUM/xUYUxI5r5Yd0LEYN2sNehEoxfvqY2yp7wrgbuHtH7mOxu3Rkp+YIzMAQSWJWTmIQRL3tQ== acs-aks
     service_principal:
       client_id: "{{ client_id }}"
       client_secret: "{{ secret }}"
+    network_profile:
+      load_balancer_sku: standard
     agent_pool_profiles:
       - name: default
         count: 1
@@ -54,6 +56,9 @@
   shell: "az aks get-credentials --resource-group {{projectname}}_{{version}}_RG_K8s --name {{ projectname | regex_replace('[^a-z\\d:]', '')}}{{version | regex_replace('[^a-z\\d:]', '')}}K8sCLUSTER --overwrite-existing"
   tags: aks
 
+- name: (Azure) Enable K8s Dashboard (only for K8s 1.18.x)
+  shell: "az aks enable-addons --resource-group {{projectname}}_{{version}}_RG_K8s --name {{ projectname | regex_replace('[^a-z\\d:]', '')}}{{version | regex_replace('[^a-z\\d:]', '')}}K8sCLUSTER -a kube-dashboard"
+  tags: aks
 
 
 

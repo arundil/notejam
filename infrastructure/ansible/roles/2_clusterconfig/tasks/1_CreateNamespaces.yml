@@ -7,7 +7,7 @@
 #####################################
 
 - name: (Cluster Configuration) Verify the platform namespace exits
-  shell: kubectl get namespace notejam
+  shell: kubectl get namespace {{namespace}}
   ignore_errors: yes
   register: namespace_platf_result
   tags: namespaces
@@ -17,6 +17,6 @@
   tags: namespaces
 
 - name: (Cluster Configuration) Create ingress namespace
-  shell: kubectl create namespace notejam
+  shell: kubectl create namespace {{namespace}}
   when: exitsPlatfns|length == 0
   tags: namespaces

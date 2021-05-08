@@ -15,6 +15,7 @@
 subscription_id: 306a2273-a31f-43ac-b17a-c182173d3297
 client_id: 124eb0aa-c717-4bc7-8e22-467632958625
 tenant: f3bb2212-cb72-4558-9db2-1038314bab1c
+#secret: it is on secrets.yml
 #IMPORTANT: choose ONLY one of those areas--> eastus2,northeurope,centralus,westeurope or australiaeast.
 location: westeurope
 
@@ -28,6 +29,13 @@ version: "1_0" # (Only alphanumeric characters, lower case, max lenth 3)
 linux_cpu_node: "Standard_B2s" # 2 CPUs, 4 GiB RAM
 linux_cpu_min_count: 1
 linux_cpu_max_count: 1
+k8sversion: 1.18.17
 
 # K8s main namespace
 namespace: notejam
+
+#===========Database_config===========================
+dbuser: posgres
+dbname: "{{ projectname | regex_replace('[^a-z\\d:]', '')}}{{version | regex_replace('[^a-z\\d:]', '')}}-db"
+dbuserk8s: "{{ dbuser }}@{{ dbname }}"
+#dbsecret: it's on secret.yml

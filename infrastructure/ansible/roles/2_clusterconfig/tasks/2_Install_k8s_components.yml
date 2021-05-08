@@ -9,7 +9,7 @@
 
 - name: (Cluster Configuration) Get Public IP generated in Azure role.
   azure_rm_publicipaddress_info:
-    resource_group: "{{projectname}}_{{version}}_RG_VNETS"
+    resource_group: "{{projectname}}_{{version}}_RG_K8s"
     name: "{{projectname}}-{{version}}-publicIpAddress"
   register: publicip
   tags: k8s
@@ -18,26 +18,26 @@
     msg: "{{publicip.publicipaddresses[0].ip_address}}"
   tags: k8s
 
-
-- name: (Cluster Configuration) Check if k8s service has taken the right public IP.
-  shell: "kubectl get service -l app=nginx-ingress --namespace ingress-basic"
-  register: nginx_service 
-  retries: 20
-  delay: 30
-  until: '"{{ publicip.publicipaddresses[0].ip_address }}" in nginx_service.stdout'
-  tags: k8s
-
-
 - name: (Cluster Configuration) Deploy K8s File
-    shell: | 
+  shell: | 
     cat <<EOF |  kubectl apply -f -
-    # 2) 
-    # Global ConfigMap for all the pods
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: dbsecret
+      namespace: "{{namespace}}"
+    type: Opaque
+    data:
+      DB_USER: "{{ dbuserk8s | b64encode }}"
+      DB_PASSWORD: "{{ dbsecret | b64encode }}"
+
+    ---
+    # Configmap-notejam
 
     apiVersion: v1
     kind: ConfigMap
     data:
-      DB_URL: "notejam10-db.postgres.database.azure.com"
+      DB_URL: "{{dbname}}.postgres.database.azure.com"
       DB_PORT: "5432"
       DB_NAME: "notejam"
     metadata:
@@ -45,18 +45,10 @@
       labels:
         app: all
       name: global-configmap
-      namespace: notejam  
+      namespace: {{namespace}}  
     ---
-    # 3) 
-    #=================================
-    #----------->NOTEJAM<------------#
-    #=================================
-    # ConfigMap for notejam
 
-    # 5) Deployment- Notejam
-    # Pull the container from registry
-    # Open Port 8000
-    # Configure DB connection reading from the ConfigMap
+    # Deployment - Notetam
 
     apiVersion: apps/v1
     kind: Deployment
@@ -64,7 +56,7 @@
       labels: 
         app: notejam
       name: notejam-deployment
-      namespace: notejam
+      namespace: {{namespace}}
     spec: 
       replicas: 1
       selector:
@@ -114,10 +106,9 @@
                   secretKeyRef:
                     name: dbsecret
                     key: DB_PASSWORD
-
     ---
-    #4) Service - Notetam
-    # Expose port 8000 pod to the internal cluster network
+
+    # Service - Notetam
 
     apiVersion: v1
     kind: Service
@@ -126,7 +117,7 @@
       labels:
         app: notejam
       name: notejam
-      namespace: notejam
+      namespace: {{namespace}}
     spec:
       ports:
       - name: "8000"
@@ -138,19 +129,12 @@
       loadBalancer: {}
 
     ---
-
-    #=================================
-    #------------>NGNIX<-------------#
-    #=================================
-
-    # 5) Deployment - NGINX
-    # Pull Image from registry
-    # Open Port 80 & 443
+    # Deployment nginx
 
     apiVersion: apps/v1
     kind: Deployment
     metadata:
-      namespace: notejam
+      namespace: {{namespace}}
       annotations:
         app: nginx
       creationTimestamp: null
@@ -180,27 +164,29 @@
             resources: {}
           restartPolicy: Always
     ---
-    # 6) Service - NGINX
-    # Expose port 80 of NGINX pod to the internal cluster network
+
+    # Service - NGINX
 
     apiVersion: v1
     kind: Service
     metadata:
-    creationTimestamp: null
-    labels:
-      app: nginx
-    name: nginx-service-lb
-    namespace: notejam
+      creationTimestamp: null
+      labels:
+        app: nginx
+      name: nginx-service-lb
+      namespace: {{namespace}}
     spec:
-    ports:
-    - name: "http"
-      port: 80
-      targetPort: 80
-    - name: https
-      port: 443
-      targetPort: 443
-    selector:
-      app: nginx
-    type: LoadBalancer
+      type: LoadBalancer
+      ports:
+      - name: "http"
+        port: 80
+        targetPort: 80
+      - name: https
+        port: 443
+        targetPort: 443
+      selector:
+        app: nginx
     ---
+    EOF
+
   tags: k8s
