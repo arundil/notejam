@@ -33,7 +33,6 @@ jobs:
           tags: arundil/notejam:latest
 
     dockerize-nginx:
-    runs-on: ubuntu-latest
     steps:
       -
         name: Build and push
