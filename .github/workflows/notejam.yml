@@ -10,15 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Make envfile
-      uses: SpicyPizza/create-envfile@v1
-      with:
-        DB_URL: "dbnotejam.postgres.database.azure.com"
-        DB_PORT: "5432"
-        DB_NAME: "notejam"
-        DB_USER: "posgres@dbnotejam"
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        directory: containers
-        file_name: .env
+        uses: SpicyPizza/create-envfile@v1
+        with:
+          DB_URL: "dbnotejam.postgres.database.azure.com"
+          DB_PORT: "5432"
+          DB_NAME: "notejam"
+          DB_USER: "posgres@dbnotejam"
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          directory: containers
+          file_name: .env
       - uses: actions/checkout@v2
       - name: Build the stack
         run: docker-compose -f containers/docker-compose.yaml up -d
