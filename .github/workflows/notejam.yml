@@ -20,7 +20,6 @@ jobs:
           echo DB_USER="posgres@dbnotejam" >> containers/notejam-container/.env
           echo DB_PASSWORD="${{ secrets.DB_PASSWORD }}" >> containers/notejam-container/.env
           cat containers/notejam-container/.env
-      - uses: actions/checkout@v2
       - name: Build the stack
         run: docker-compose -f containers/docker-compose.yaml up -d
       - name: Test
