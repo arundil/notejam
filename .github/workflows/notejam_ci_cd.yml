@@ -98,7 +98,7 @@ jobs:
   #         tags: arundil/nginx:latest
 
   push-kubernetes:
-    needs: push-dockerhub
+    # needs: push-dockerhub
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
