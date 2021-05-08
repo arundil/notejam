@@ -1,4 +1,4 @@
-name: Dockerize
+name: Notejam
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - 'main'
 
 jobs:
-  docker:
+  dockerize-notejam:
     runs-on: ubuntu-latest
     steps:
       -
@@ -31,3 +31,14 @@ jobs:
           context: containers/notejam-container/
           push: true
           tags: arundil/notejam:latest
+
+    dockerize-nginx:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: containers/nginx-container/
+          push: true
+          tags: arundil/nginx:latest
