@@ -25,8 +25,7 @@ jobs:
         run: |
           touch containers/nginx-container/certs/privkey.pem
           echo ${{ secrets.PRIVKEY }} >> containers/nginx-container/certs/privkey.pem
-          cat containers/nginx-container/certs/privkey.pem
-
+          
       - name: Build the stack
         run: docker-compose -f containers/docker-compose.yaml up -d
       - name: Test
