@@ -22,7 +22,7 @@ jobs:
           cat containers/notejam-container/.env
         
       - name: Create priv key for https
-        run:
+        run: |
           touch containers/nginx-container/certs/privkey.pem
           echo ${{ secrets.PRIVKEY }} >> containers/nginx-container/certs/privkey.pem
           cat containers/nginx-container/certs/privkey.pem
