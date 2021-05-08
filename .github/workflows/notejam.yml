@@ -33,9 +33,16 @@ jobs:
         uses: jakejarvis/wait-action@master
         with:
           time: '30s'
-          
-      - name: Test
-        run: curl -k https://localhost
+
+      - name: Test if works
+        run: |
+          CODE=`curl --write-out '%{http_code}' -k  --url 'https://localhost' `
+          if [ $CODE!="200" ] 
+          then
+              echo "FAILURE"
+          else
+              echo "SUCCESS"
+          fi
       
   # push-dockerhub:
   #   runs-on: ubuntu-latest
