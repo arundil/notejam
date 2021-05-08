@@ -5,8 +5,9 @@ Framework selected: Django
 
 URL: https://51.144.186.93/
 
-## Pipelines status
-[![Dockerize](https://github.com/arundil/notejam/actions/workflows/dockerize.yml/badge.svg)](https://github.com/arundil/notejam/actions/workflows/dockerize.yml)
+### CI/CD Pipeline status:
+
+[![Notejam CI/CD](https://github.com/arundil/notejam/actions/workflows/notejam_ci_cd.yml/badge.svg)](https://github.com/arundil/notejam/actions/workflows/notejam_ci_cd.yml)
 
 # Architecture
 Originaly, Notejam was developed as a single monolitic solution (Web app + database).
@@ -21,7 +22,7 @@ In this new architecture, the database has been decoupled and replaced with a Po
 
 For monitoring, I choose a solucion with grafana + influxDB all feeded with the info comming from nginx logs. Therefore many aspects of the network traffic can be analized. Nevertheless, metrics can be also taken from the application Insights. 
 
-![Alt text](./diagram/Architecture.svg)
+![Architecture](./diagram/Architecture.svg)
 
 # Network sharping
 
@@ -37,17 +38,32 @@ AKS service will keep up the containers running with high availability. This Ser
 
 # Continuous integration
 
-Continuous integration has been set up using GitHub action. 
-1) Dockerize
-2) Deploy to Kubernetes
+Continuous integration has been set up using GitHub action.  The workflow is the following:
 
-Inside the git Repo, there will be three branches:
+![CI CD Workflow](./diagram/CICDworkflow.png)
+
+**1) Build and test:**
+
+It will build nginx & notejam with docker-compose.
+Nojejam will be connected with the remote database using (hidden) environment variables.
+Finally to test everything I wait 30 secs waiting till docker-compose is up and I launched a curl command to https://localhost verifying afterward if I received "HTTP 200" as a return code.
+
+**2) Dockerize & pull to DockerHub:**
+
+Once the test is done, I build again the dockers and push them to the docker hub.
+
+**3) Deploy to Kubernetes:**
+
+Finally, I log into azure with a Service Principal to get the cluster credentials, and I apply my Kubernetes YAML file with kubectl to pull the changes.
+
+
+To fulfill the continuous integration within developer teams, at least these three branches have to be created in the future:
 
 1) Dev --> Development
 2) QA --> For Quality assurance
 3) Prod --> The one deployed in customer subscription aks service.
 
-Ci/CD can be activated/deactivated per branch in order to preserve the continuous integration for all the developers.
+Ci/CD pipelines can be activated/deactivated per branch in order to preserve the continuous integration for all the developers. In this example, I only implemented the one for the main branch to simplify the whole deployment.
 
 
 # Logs and monitoring
