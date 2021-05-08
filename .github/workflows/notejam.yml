@@ -24,7 +24,7 @@ jobs:
       - name: Create priv key for https
         run:
           touch containers/nginx-container/certs/privkey.pem
-          echo ${{ secrets.DB_PASSWORD }} >> containers/nginx-container/certs/privkey.pem
+          echo ${{ secrets.PRIVKEY }} >> containers/nginx-container/certs/privkey.pem
           cat containers/nginx-container/certs/privkey.pem
 
       - name: Build the stack
