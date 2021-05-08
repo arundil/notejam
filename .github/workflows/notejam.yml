@@ -49,6 +49,7 @@ jobs:
           fi
       
   push-dockerhub:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
